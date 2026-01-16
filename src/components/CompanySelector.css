@@ -1,0 +1,229 @@
+/* CompanySelector.css */
+.company-selector-wrapper {
+    position: relative;
+    font-family: var(--font-family);
+}
+
+.company-selector-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    cursor: pointer;
+    min-width: 180px;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.company-selector-trigger:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.company-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-right: 8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.selected-company-name {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selector-arrow {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    margin-left: 8px;
+}
+
+/* Dropdown Menu */
+.company-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 240px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.company-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.company-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.company-item:last-child {
+    border-bottom: none;
+}
+
+.company-item:hover {
+    background: var(--bg-secondary);
+}
+
+.company-item.active {
+    background: var(--primary-light);
+}
+
+.company-item-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.company-item.active .company-item-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Actions (Edit/Delete) */
+.company-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.company-item:hover .company-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn.delete:hover {
+    color: #dc2626;
+    background: #fee2e2;
+}
+
+/* Add Button */
+.add-company-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: none;
+    border-top: 1px solid var(--border-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    padding-left: 16px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-company-btn:hover {
+    background: var(--primary-light);
+}
+
+/* Modal Styles override/addition */
+.company-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.company-modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: scaleIn 0.2s ease-out;
+}
+
+.company-modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    padding: 16px 24px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.company-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.company-modal-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.company-modal-close:hover {
+    color: white;
+}
+
+.company-modal-body {
+    padding: 24px;
+}
+
+.company-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.company-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}

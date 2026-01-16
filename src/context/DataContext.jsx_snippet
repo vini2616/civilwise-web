@@ -1,0 +1,45 @@
+
+    // CRUD Operations for Materials (Inward/Outward)
+    const addMaterial = async (material) => {
+        if (currentUser && currentUser.token && activeSite) {
+            try {
+                const newMaterial = await api.createMaterial(currentUser.token, { ...material, siteId: activeSite });
+                if (newMaterial._id || newMaterial.id) {
+                    setMaterials(prev => [...prev, newMaterial]);
+                    return { success: true, material: newMaterial };
+                }
+            } catch (e) {
+                console.error("Failed to add material", e);
+                return { success: false, message: "Network Error" };
+            }
+        }
+    };
+
+    const updateMaterial = async (updatedMaterial) => {
+        if (currentUser && currentUser.token) {
+            try {
+                const id = updatedMaterial._id || updatedMaterial.id;
+                const result = await api.updateMaterial(currentUser.token, id, updatedMaterial);
+                if (result._id || result.id) {
+                    setMaterials(prev => prev.map(m => (m._id === id || m.id === id) ? result : m));
+                    return { success: true, material: result };
+                }
+            } catch (e) {
+                console.error("Failed to update material", e);
+                return { success: false, message: "Network Error" };
+            }
+        }
+    };
+
+    const deleteMaterial = async (materialId) => {
+        if (currentUser && currentUser.token) {
+            try {
+                await api.deleteMaterial(currentUser.token, materialId);
+                setMaterials(prev => prev.filter(m => m._id !== materialId && m.id !== materialId));
+                return { success: true };
+            } catch (e) {
+                console.error("Failed to delete material", e);
+                return { success: false, message: "Network Error" };
+            }
+        }
+    };

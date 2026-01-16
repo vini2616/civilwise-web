@@ -1,0 +1,103 @@
+/* Simple DPR dropdown – old look */
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+.searchable-select__control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.searchable-select__control:hover,
+.searchable-select__control:focus {
+  border-color: #9ca3af;
+}
+.searchable-select__arrow {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  transition: transform 0.2s;
+}
+.searchable-select--open .searchable-select__arrow {
+  transform: rotate(180deg);
+}
+.searchable-select__menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.searchable-select__search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  background: #f9fafb;
+}
+.searchable-select__option {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.searchable-select__option:hover,
+.searchable-select__option--active {
+  background: #f3f4f6;
+}
+.searchable-select__selected {
+  color: #111827;
+}
+.searchable-select__add-new {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.searchable-select__add-new:hover {
+  background: #eff6ff;
+}
+.searchable-select__add-new-sticky {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.searchable-select__add-new-sticky:hover {
+  background: #eff6ff;
+}
+
+/* Ensure list scrolls independently */
+.searchable-select__list {
+  max-height: 240px;
+  overflow-y: auto;
+}
