@@ -1156,8 +1156,6 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
                 ratio: itemForm.ratio || activeEstimation.defaultPlasterRatio || '1:4',
                 area: area,
                 volume: volume,
-                area: area,
-                volume: volume,
                 manualArea: itemForm.manualArea,
                 deductions: itemForm.deductions || []
             };
@@ -2496,8 +2494,6 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
                                             {(() => {
                                                 const res = calculateMasonry({
                                                     material: formData.defaultMaterial || 'AAC',
-                                                    customDims: formData.defaultCustomDims || { l: 0, w: 0, h: 0 },
-                                                    wallDims: formData.wallDims || { l: 0, h: 0, t: 0 },
                                                     customDims: formData.defaultCustomDims || { l: 0, w: 0, h: 0 },
                                                     wallDims: formData.wallDims || { l: 0, h: 0, t: 0 },
                                                     mortarRatio: formData.defaultMortarRatio || '1:6',
