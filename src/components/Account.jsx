@@ -74,6 +74,12 @@ const LedgerView = ({ transactions, partyName, onClose, companyName }) => {
                 </div>
             </div>
 
+            {/* Print Only Header */}
+            <div className="print-only text-center mb-4">
+                <h2 className="text-xl font-bold">{companyName || 'CivilWise Construction'}</h2>
+                <div className="text-sm text-gray-600">Ledger Account: {partyName}</div>
+            </div>
+
             {/* Ledger Info */}
             <div className="tally-subheader">
                 <div className="tally-ledger-name">Ledger: <span className="font-bold">{partyName}</span></div>
