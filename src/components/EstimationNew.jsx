@@ -329,12 +329,47 @@ const OptimizationResults = ({ items, title, onBack, initialScrap = [], onSaveSc
     });
 
     const handleExportCSV = () => {
-        let csv = "Diameter,Stock Bar ID,Cuts (Bar Mark - Length),Remaining (m)\n";
+        let csv = "Diameter,Stock Bar Range,Qty,Cutting Pattern,Waste (m),Assigned Marks\n";
+
         Object.keys(results).sort((a, b) => b - a).forEach(dia => {
-            results[dia].forEach((stock, idx) => {
-                const cutsStr = stock.cuts.map(c => `${c.barMark} (${c.cuttingLength.toFixed(3)}m)`).join('; ');
-                const stockId = stock.isScrap ? `Old Stock (${stock.length}m)` : (idx + 1);
-                csv += `${dia},${stockId},"${cutsStr}",${stock.remaining.toFixed(3)}\n`;
+            // Grouping Logic (same as UI)
+            const groupedStocks = results[dia].reduce((acc, stock, i) => {
+                const cutsKey = stock.cuts.map(c => c.cuttingLength.toFixed(3)).sort().join(';');
+                const key = `${stock.isScrap}-${stock.length}-${stock.remaining.toFixed(4)}-${cutsKey}`;
+                const last = acc[acc.length - 1];
+                if (last && last.key === key) {
+                    last.count++;
+                    last.stocks.push(stock);
+                } else {
+                    acc.push({ key, stocks: [stock], count: 1, startIndex: i + 1 });
+                }
+                return acc;
+            }, []);
+
+            groupedStocks.forEach(group => {
+                const isScrap = group.stocks[0].isScrap;
+                const range = isScrap
+                    ? `Old Stock (${group.stocks[0].length}m)`
+                    : (group.count > 1 ? `${group.startIndex}-${group.startIndex + group.count - 1}` : group.startIndex);
+
+                // Pattern String
+                const patternCounts = {};
+                group.stocks[0].cuts.forEach(c => {
+                    const len = c.cuttingLength.toFixed(3);
+                    patternCounts[len] = (patternCounts[len] || 0) + 1;
+                });
+                const patternStr = Object.entries(patternCounts)
+                    .map(([len, count]) => `${len}m (x${count})`)
+                    .join(' + ');
+
+                // Marks
+                const allMarks = [...new Set(group.stocks.flatMap(s => s.cuts.map(c => c.barMark)))].sort().join('; ');
+
+                // Escape quotes for CSV
+                const safePattern = `"${patternStr}"`;
+                const safeMarks = `"${allMarks}"`;
+
+                csv += `${dia},${range},${group.count},${safePattern},${group.stocks[0].remaining.toFixed(3)},${safeMarks}\n`;
             });
         });
 
@@ -416,43 +451,130 @@ const OptimizationResults = ({ items, title, onBack, initialScrap = [], onSaveSc
                 </div>
             </div>
 
-            {Object.keys(results).sort((a, b) => b - a).map(dia => (
-                <div key={dia} className="card mb-4">
-                    <h3>Dia: {dia}mm</h3>
-                    <div className="table-responsive">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Stock Bar #</th>
-                                    <th>Cuts</th>
-                                    <th>Remaining (m)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {results[dia].map((stock, idx) => (
-                                    <tr key={idx}>
-                                        <td>
-                                            {stock.isScrap ? (
-                                                <span className="badge bg-yellow-100 text-yellow-800">Old Stock ({stock.length}m)</span>
-                                            ) : idx + 1}
-                                        </td>
-                                        <td>
-                                            {stock.cuts.map((c, i) => (
-                                                <span key={i} className="badge steel mr-1">
-                                                    {c.barMark} ({c.cuttingLength.toFixed(3)})
-                                                </span>
-                                            ))}
-                                        </td>
-                                        <td style={{ color: stock.remaining > 1 ? 'red' : 'green' }}>
-                                            {stock.remaining.toFixed(3)}
-                                        </td>
+            {Object.keys(results).sort((a, b) => b - a).map(dia => {
+                const groupedStocks = results[dia].reduce((acc, stock, i) => {
+                    // Group only by Length Pattern (ignore marks for grouping key)
+                    const cutsKey = stock.cuts.map(c => c.cuttingLength.toFixed(3)).sort().join(';');
+                    const key = `${stock.isScrap}-${stock.length}-${stock.remaining.toFixed(4)}-${cutsKey}`;
+
+                    const last = acc[acc.length - 1];
+                    if (last && last.key === key) {
+                        last.count++;
+                        last.stocks.push(stock);
+                    } else {
+                        acc.push({ key, stocks: [stock], count: 1, startIndex: i + 1 });
+                    }
+                    return acc;
+                }, []);
+
+                return (
+                    <div key={dia} className="card mb-4">
+                        <h3>Dia: {dia}mm</h3>
+                        <div className="table-responsive">
+                            <table className="data-table">
+                                <thead>
+                                    <tr className="bg-gray-50">
+                                        <th style={{ width: '15%' }}>Stock Bar(s)</th>
+                                        <th style={{ width: '8%', textAlign: 'center' }}>Qty</th>
+                                        <th style={{ width: '40%' }}>How to Cut (Per Bar)</th>
+                                        <th style={{ width: '12%' }}>Waste</th>
+                                        <th style={{ width: '25%' }}>For Elements</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {groupedStocks.map((group, idx) => {
+                                        // Generate Cutting Pattern Summary
+                                        const patternCounts = {};
+                                        group.stocks[0].cuts.forEach(c => {
+                                            const len = c.cuttingLength.toFixed(3);
+                                            patternCounts[len] = (patternCounts[len] || 0) + 1;
+                                        });
+
+                                        // Visual Tags for Cuts
+                                        const cutTags = Object.entries(patternCounts).map(([len, count]) => (
+                                            <div key={len} style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                marginRight: '8px',
+                                                marginBottom: '4px',
+                                                background: '#e0f2fe',
+                                                border: '1px solid #bae6fd',
+                                                borderRadius: '4px',
+                                                padding: '2px 8px'
+                                            }}>
+                                                <span style={{ fontWeight: 'bold', color: '#0369a1', marginRight: '4px' }}>{len}m</span>
+                                                <span style={{ fontSize: '0.85em', color: '#64748b' }}>x {count} pcs</span>
+                                            </div>
+                                        ));
+
+                                        // Aggregate all marks
+                                        const allMarks = [...new Set(group.stocks.flatMap(s => s.cuts.map(c => c.barMark)))].sort();
+                                        const marksStr = allMarks.length > 8
+                                            ? allMarks.slice(0, 8).join(', ') + ` +${allMarks.length - 8} more`
+                                            : allMarks.join(', ');
+
+                                        const isScrap = group.stocks[0].isScrap;
+                                        const stockLen = group.stocks[0].length;
+                                        const remaining = group.stocks[0].remaining.toFixed(3);
+
+                                        // Color code waste
+                                        const wasteColor = remaining > 1 ? '#ef4444' : remaining > 0.5 ? '#f59e0b' : '#22c55e';
+
+                                        return (
+                                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    {isScrap ? (
+                                                        <div className="flex flex-col">
+                                                            <span className="badge bg-yellow-100 text-yellow-800 mb-1">Old Stock</span>
+                                                            <span className="text-sm text-gray-500">{stockLen}m Len</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col">
+                                                            <span style={{ fontWeight: '600', color: '#334155' }}>
+                                                                #{group.count > 1 ? `${group.startIndex} - ${group.startIndex + group.count - 1}` : group.startIndex}
+                                                            </span>
+                                                            <span className="text-xs text-gray-400">Standard 12m</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                                    <span style={{
+                                                        background: '#f8fafc',
+                                                        border: '1px solid #e2e8f0',
+                                                        borderRadius: '50%',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontWeight: 'bold',
+                                                        color: '#475569'
+                                                    }}>
+                                                        {group.count}
+                                                    </span>
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                                                        {cutTags}
+                                                    </div>
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <span style={{ fontWeight: 'bold', color: wasteColor }}>{remaining} m</span>
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <span className="text-sm text-gray-500" style={{ lineHeight: '1.2', display: 'block' }}>
+                                                        {marksStr}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
 
         </div>
     );

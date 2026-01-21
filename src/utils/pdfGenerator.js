@@ -442,18 +442,50 @@ export const generateOptimizationPDF = (estimationTitle, results, totalStockUsed
             doc.text(`Diameter: ${dia} mm`, m, y);
             y += 5;
 
-            const tableHead = [['Stock #', 'Cut Patterns', 'Remaining (m)']];
+            // Grouping Logic
+            const groupedStocks = results[dia].reduce((acc, stock, i) => {
+                const cutsKey = stock.cuts.map(c => c.cuttingLength.toFixed(3)).sort().join(';');
+                const key = `${stock.isScrap}-${stock.length}-${stock.remaining.toFixed(4)}-${cutsKey}`;
+
+                const last = acc[acc.length - 1];
+                if (last && last.key === key) {
+                    last.count++;
+                    last.stocks.push(stock);
+                } else {
+                    acc.push({ key, stocks: [stock], count: 1, startIndex: i + 1 });
+                }
+                return acc;
+            }, []);
+
+            const tableHead = [['Stock Range', 'Qty', 'Cutting Pattern', 'Waste', 'Usage']];
             const tableBody = [];
 
-            results[dia].forEach((stock, idx) => {
-                // Format cuts: B1 (2.500), B2 (3.000)
-                // Use a wrapped text for cuts column
-                const cutsStr = stock.cuts.map(c => `${c.barMark} (${c.cuttingLength.toFixed(3)}m)`).join(', ');
-                const stockLabel = stock.isScrap ? `Old Stock (${stock.length}m)` : (idx + 1).toString();
+            groupedStocks.forEach(group => {
+                const isScrap = group.stocks[0].isScrap;
+                const stockLabel = isScrap
+                    ? `Old (${group.stocks[0].length}m)`
+                    : (group.count > 1 ? `#${group.startIndex}-${group.startIndex + group.count - 1}` : `#${group.startIndex}`);
+
+                // Cutting Pattern Summary
+                const patternCounts = {};
+                group.stocks[0].cuts.forEach(c => {
+                    const len = c.cuttingLength.toFixed(3);
+                    patternCounts[len] = (patternCounts[len] || 0) + 1;
+                });
+                const patternStr = Object.entries(patternCounts)
+                    .map(([len, count]) => `${len}m (x${count})`)
+                    .join(', ');
+
+                // Marks Summary
+                const allMarks = [...new Set(group.stocks.flatMap(s => s.cuts.map(c => c.barMark)))].sort();
+                const marksStr = allMarks.join(', ');
+
                 tableBody.push([
                     stockLabel,
-                    cutsStr,
-                    stock.remaining.toFixed(3)
+                    group.count,
+                    patternStr,
+                    group.stocks[0].remaining.toFixed(3),
+                    marksStr
                 ]);
             });
 
@@ -465,16 +497,19 @@ export const generateOptimizationPDF = (estimationTitle, results, totalStockUsed
                 headStyles: { fillColor: [0, 86, 179], fontSize: 10 },
                 styles: { fontSize: 10, cellPadding: 3 },
                 columnStyles: {
-                    0: { cellWidth: 35, halign: 'center' },
-                    2: { cellWidth: 30, halign: 'center', fontStyle: 'bold', textColor: [220, 38, 38] } // Red text for remaining
+                    0: { cellWidth: 25, halign: 'center' }, // Stock Range
+                    1: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }, // Qty
+                    2: { cellWidth: 50 }, // Cutting Pattern
+                    3: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Waste
+                    4: { cellWidth: 'auto', fontSize: 8, textColor: 100 } // Usage (auto width)
                 },
                 didParseCell: function (data) {
-                    if (data.section === 'body' && data.column.index === 2) {
+                    if (data.section === 'body' && data.column.index === 3) { // Waste Column
                         const val = parseFloat(data.cell.raw);
                         if (val > 1) {
-                            data.cell.styles.textColor = [220, 38, 38]; // Red if > 1m (High waste)
+                            data.cell.styles.textColor = [220, 38, 38]; // Red
                         } else {
-                            data.cell.styles.textColor = [16, 185, 129]; // Green if < 1m (Good usage)
+                            data.cell.styles.textColor = [16, 185, 129]; // Green
                         }
                     }
                 }
