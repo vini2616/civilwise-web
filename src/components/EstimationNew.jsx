@@ -1985,8 +1985,17 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
                                                         <td>
                                                             {(() => {
                                                                 const sId = item.shape;
-                                                                const shapeDef = BAR_SHAPES[sId] || customShapes.find(s => (s.id === sId || s._id === sId));
-                                                                return shapeDef ? shapeDef.name : sId;
+                                                                // Check standard shapes
+                                                                if (BAR_SHAPES[sId]) return BAR_SHAPES[sId].name;
+
+                                                                // Check custom shapes safely (convert to string to ensure matching)
+                                                                if (customShapes && customShapes.length > 0) {
+                                                                    const custom = customShapes.find(s => String(s.id) === String(sId) || String(s._id) === String(sId));
+                                                                    if (custom) return custom.name;
+                                                                }
+
+                                                                // Fallback
+                                                                return sId;
                                                             })()}
                                                         </td>
                                                         <td>{item.dia}</td><td>{item.spacing}</td><td>{item.noMembers}</td><td>{item.barsPerMember}</td>
