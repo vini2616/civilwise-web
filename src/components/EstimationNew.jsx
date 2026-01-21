@@ -1522,13 +1522,39 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
         const handleExportDetailCSV = () => {
             let csvContent = "data:text/csv;charset=utf-8,";
             if (isSteel) {
-                csvContent += "Bar Mark,Description,Shape,Diameter,No. Members,No. Bars,Total Bars,Cut Length (mm),Total Length (m),Total Weight (kg),Segment Lengths\n";
+                csvContent += "Bar Mark,Description,Shape,Diameter,No. Members,No. Bars,Total Bars,Cut Length (m),Total Length (m),Total Weight (kg),Segment Lengths\n";
                 activeItems.forEach(item => {
+                    let shapeName = item.shape;
+                    // Resolve Shape Name logic
+                    if (BAR_SHAPES[item.shape]) {
+                        shapeName = BAR_SHAPES[item.shape].name;
+                    } else {
+                        const custom = customShapes.find(s => String(s.id) === String(item.shape) || String(s._id) === String(item.shape));
+                        if (custom) {
+                            shapeName = custom.name;
+                        } else if (item.shape && item.shape.length > 10) {
+                            shapeName = "Custom Shape";
+                        }
+                    }
+
                     const totalBars = (parseFloat(item.noMembers) || 0) * (parseFloat(item.barsPerMember) || 0);
-                    const cutLengthMm = (parseFloat(item.cuttingLength) || 0) * 1000;
+                    const cutLengthM = (parseFloat(item.cuttingLength) || 0); // Already in m
                     const segmentLengths = item.dims ? Object.entries(item.dims).map(([key, val]) => `${key}=${val}`).join('; ') : '';
-                    csvContent += `${item.barMark},"${item.description || ''}",${item.shape},${item.dia},${item.noMembers},${item.barsPerMember},${totalBars},${cutLengthMm.toFixed(0)},${item.totalLength.toFixed(2)},${item.totalWeight.toFixed(2)},"${segmentLengths}"\n`;
+                    csvContent += `${item.barMark},"${item.description || ''}",${shapeName},${item.dia},${item.noMembers},${item.barsPerMember},${totalBars},${cutLengthM.toFixed(3)},${item.totalLength.toFixed(2)},${item.totalWeight.toFixed(2)},"${segmentLengths}"\n`;
                 });
+
+                // Add Weight Summary by Diameter
+                csvContent += "\nWeight Summary by Diameter\nDiameter (mm),Total Weight (kg)\n";
+                const weightByDia = {};
+                activeItems.forEach(item => {
+                    const dia = item.dia;
+                    weightByDia[dia] = (weightByDia[dia] || 0) + (parseFloat(item.totalWeight) || 0);
+                });
+                Object.entries(weightByDia)
+                    .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                    .map(([dia, wt]) => {
+                        csvContent += `${dia},${wt.toFixed(2)}\n`;
+                    });
             } else if (isConcrete) {
                 csvContent += "Description,Shape,Dimensions,1 Item (m3),Count,Quantity (m3)\n";
                 activeItems.forEach(item => {
@@ -1667,7 +1693,7 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
                                         alert("No data to download.");
                                         return;
                                     }
-                                    generateEstimationPDF(activeEstimation, activeItems);
+                                    generateEstimationPDF(activeEstimation, activeItems, customShapes, BAR_SHAPES);
                                 }}>Download PDF</button>
                                 <button className="btn btn-secondary" onClick={handleExportDetailCSV}> Export Excel</button>
                                 {isSteel && <button className="btn btn-primary" onClick={() => setView('optimization')}> Optimize Cuts</button>}

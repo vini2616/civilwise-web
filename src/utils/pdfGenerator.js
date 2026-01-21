@@ -181,7 +181,7 @@ export const generateDetailedHistoryPDF = (historyData) => {
     }
 };
 
-export const generateEstimationPDF = (estimation, items) => {
+export const generateEstimationPDF = (estimation, items, customShapes = [], barShapes = {}) => {
     try {
         const doc = new jsPDF();
         const m = 15;
@@ -205,10 +205,24 @@ export const generateEstimationPDF = (estimation, items) => {
         if (estimation.type === 'steel') {
             tableColumn.push('Mark', 'Description', 'Shape', 'Dia', 'Spacing', 'No. Mem', 'Bars/Mem', 'Total Bars', 'Cut Len (m)', 'Total Len (m)', 'Total Wt (kg)');
             items.forEach(item => {
+                let shapeName = item.shape;
+                // Resolve Shape Name
+                if (barShapes[item.shape]) {
+                    shapeName = barShapes[item.shape].name;
+                } else {
+                    const custom = customShapes.find(s => String(s.id) === String(item.shape) || String(s._id) === String(item.shape));
+                    if (custom) {
+                        shapeName = custom.name;
+                    } else if (item.shape && item.shape.length > 10) {
+                        // Fallback for missing/deleted custom shapes
+                        shapeName = "Custom Shape";
+                    }
+                }
+
                 tableRows.push([
                     item.barMark,
                     item.description,
-                    item.shape,
+                    shapeName,
                     item.dia,
                     item.spacing,
                     item.noMembers,
@@ -304,6 +318,34 @@ export const generateEstimationPDF = (estimation, items) => {
             doc.text(`Bending Wire: ${(totalSteel / 100).toFixed(2)} kg`, m, y);
             y += 6;
             doc.text(`Cover Blocks: ${Math.ceil((totalSteel / 100) * 3)} Nos`, m, y);
+
+            // Weight Summary by Diameter
+            y += 10;
+            doc.setFontSize(12).setFont('helvetica', 'bold');
+            doc.text("Weight Summary by Diameter", m, y);
+            y += 6;
+
+            const weightByDia = {};
+            items.forEach(item => {
+                const dia = item.dia;
+                weightByDia[dia] = (weightByDia[dia] || 0) + (parseFloat(item.totalWeight) || 0);
+            });
+
+            const diaTableHead = [['Diameter (mm)', 'Total Weight (kg)']];
+            const diaTableBody = Object.entries(weightByDia)
+                .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                .map(([dia, wt]) => [`${dia} mm`, wt.toFixed(2)]);
+
+            autoTable(doc, {
+                head: diaTableHead,
+                body: diaTableBody,
+                startY: y,
+                theme: 'striped',
+                headStyles: { fillColor: [100, 116, 139] },
+                styles: { fontSize: 10 },
+                tableWidth: 100 // Compact table
+            });
+
         } else if (estimation.type === 'concrete') {
             const totalVol = items.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
             doc.text(`Total Concrete Volume: ${totalVol.toFixed(3)} m3`, m, y);
