@@ -931,6 +931,17 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
         return activeItems.reduce((sum, item) => sum + (parseFloat(item.totalWeight) || 0), 0);
     }, [activeItems, activeEstimation]);
 
+    const weightByDia = useMemo(() => {
+        if (activeEstimation?.type !== 'steel') return {};
+        const weights = {};
+        activeItems.forEach(item => {
+            const d = item.dia;
+            const wt = parseFloat(item.totalWeight) || 0;
+            weights[d] = (weights[d] || 0) + wt;
+        });
+        return weights;
+    }, [activeItems, activeEstimation]);
+
     // --- Auto-Save System ---
     // 1. Persist Active Estimation (Navigation)
     useEffect(() => {
@@ -2147,6 +2158,29 @@ const Estimation = ({ onNavigate, pageData, setPageData, currentUser }) => {
                                             {Math.ceil((totalSteelWeight / 100) * 3)} <span className="material-unit">Nos</span>
                                         </div>
                                         <div className="material-icon">🧊</div>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e2e8f0' }}>
+                                    <h4 style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 600 }}>Weight Summary by Diameter</h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                                        {Object.entries(weightByDia)
+                                            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                                            .map(([dia, wt]) => (
+                                                <div key={dia} style={{
+                                                    background: '#f1f5f9',
+                                                    padding: '8px 12px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.9rem',
+                                                    color: '#334155',
+                                                    border: '1px solid #e2e8f0',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}>
+                                                    <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{dia}mm:</span>
+                                                    <span>{wt.toFixed(2)} kg</span>
+                                                </div>
+                                            ))}
                                     </div>
                                 </div>
                             </div>
