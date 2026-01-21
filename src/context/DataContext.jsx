@@ -402,6 +402,10 @@ export const DataProvider = ({ children }) => {
                         if (Array.isArray(settings.suppliers) && settings.suppliers.length > 0) setSavedSuppliers(settings.suppliers);
                     }
                 }).catch(err => console.error("Failed to fetch site settings:", err));
+                // Fetch Custom Shapes
+                api.getCustomShapes(currentUser.token, activeSite).then(fetchedShapes => {
+                    if (Array.isArray(fetchedShapes)) setCustomShapes(fetchedShapes);
+                }).catch(err => console.error("Failed to fetch custom shapes:", err));
             }
         }
     }, [activeSite, currentUser, activeCompanyId]); // Added activeCompanyId to dependencies
