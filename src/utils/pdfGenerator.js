@@ -349,6 +349,27 @@ export const generateEstimationPDF = (estimation, items, customShapes = [], barS
         } else if (estimation.type === 'concrete') {
             const totalVol = items.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
             doc.text(`Total Concrete Volume: ${totalVol.toFixed(3)} m3`, m, y);
+
+            y += 8;
+            const ratioStr = estimation.defaultConcreteRatio || '1:1.5:3';
+            const parts = ratioStr.split(':').map(Number);
+            if (parts.length === 3 && !parts.some(isNaN)) {
+                const totalParts = parts[0] + parts[1] + parts[2];
+                const dryVol = totalVol * 1.54;
+                const cementBags = Math.ceil((dryVol * parts[0] / totalParts) / 0.035);
+                const sandVol = (dryVol * parts[1] / totalParts).toFixed(2);
+                const aggVol = (dryVol * parts[2] / totalParts).toFixed(2);
+
+                doc.setFontSize(12).setFont('helvetica', 'bold');
+                doc.text(`Material Requirement (Ratio: ${ratioStr})`, m, y);
+                y += 6;
+                doc.setFontSize(11).setFont('helvetica', 'normal');
+                doc.text(`Total Cement: ${cementBags} Bags`, m, y);
+                y += 6;
+                doc.text(`Total Sand: ${sandVol} m3`, m, y);
+                y += 6;
+                doc.text(`Total Aggregate: ${aggVol} m3`, m, y);
+            }
         }
         else if (estimation.type === 'masonry') {
             const totalCement = Math.ceil(items.reduce((sum, item) => {
@@ -373,6 +394,11 @@ export const generateEstimationPDF = (estimation, items, customShapes = [], barS
                 return sum + (parseFloat(item.chemicalWeight) || 0);
             }, 0));
 
+            y += 4;
+            doc.setFontSize(12).setFont('helvetica', 'bold');
+            doc.text("Material Requirement", m, y);
+            y += 6;
+            doc.setFontSize(11).setFont('helvetica', 'normal');
             doc.text(`Total Cement: ${totalCement} Bags`, m, y);
             y += 6;
             doc.text(`Total Sand: ${totalSand} m3`, m, y);
@@ -398,6 +424,11 @@ export const generateEstimationPDF = (estimation, items, customShapes = [], barS
                 return sum + (dryVol * (ratioParts[1] / totalParts));
             }, 0).toFixed(2);
 
+            y += 4;
+            doc.setFontSize(12).setFont('helvetica', 'bold');
+            doc.text("Material Requirement", m, y);
+            y += 6;
+            doc.setFontSize(11).setFont('helvetica', 'normal');
             doc.text(`Total Cement: ${totalCement} Bags`, m, y);
             y += 6;
             doc.text(`Total Sand: ${totalSand} m3`, m, y);
@@ -430,10 +461,18 @@ export const generateEstimationPDF = (estimation, items, customShapes = [], barS
                 return sum + (area * (50 / 70));
             }, 0));
 
+
+
             doc.text(`Total Tiles: ${totalTiles}`, m, y);
             y += 6;
             doc.text(`Total Mortar Vol: ${totalVol.toFixed(3)} m3`, m, y);
+
             y += 8;
+            doc.setFontSize(12).setFont('helvetica', 'bold');
+            doc.text("Material Requirement", m, y);
+            y += 6;
+            doc.setFontSize(11).setFont('helvetica', 'normal');
+
             doc.text(`Total Cement: ${totalCement} Bags (inc. Slurry)`, m, y);
             y += 6;
             doc.text(`Total Sand: ${totalSand} m3`, m, y);
